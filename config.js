@@ -10,4 +10,4 @@ export const firebaseConfig = {
 };
 
 // The Google AI model that reads photos of shopping lists (README.md, step 6).
-export const aiModel = "gemini-3.5-flash-lite";
+export const aiModel = "gemini-3.6-flash";
