@@ -1,10 +1,11 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
 import {
-  initializeFirestore, persistentLocalCache, collection, doc, updateDoc, onSnapshot,
+  initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, updateDoc, onSnapshot,
   query, orderBy, serverTimestamp, writeBatch, Timestamp, increment,
 } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
-import { firebaseConfig, aiModel } from "./config.js";
-import { splitIntoItems } from "./parse.js";
+// "?v=" makes phones fetch the latest copy of each file after an update (bump it in index.html too).
+import { firebaseConfig, aiModel } from "./config.js?v=5";
+import { splitIntoItems } from "./parse.js?v=5";
 
 const $ = (id) => document.getElementById(id);
 const show = (id) => {
@@ -46,23 +47,6 @@ function codeFromText(text) {
 function openList(code) {
   store.set("listCode", code);
   location.href = linkFor(code);
-}
-
-// ---- Start-up ----
-
-if (firebaseConfig.projectId === "PASTE_HERE") {
-  show("setup-needed");
-} else {
-  const fromUrl = codeFromText(new URL(location.href).searchParams.get("list") || "");
-  const saved = store.get("listCode");
-  if (fromUrl) {
-    store.set("listCode", fromUrl);
-    askNameThen(() => startList(fromUrl));
-  } else if (saved && CODE_PATTERN.test(saved)) {
-    openList(saved);
-  } else {
-    show("start");
-  }
 }
 
 $("new-list").onclick = () => openList(newCode());
@@ -114,8 +98,23 @@ function startList(code) {
   show("list-view");
 
   const app = initializeApp(firebaseConfig);
-  // Keeps a copy on the phone, so the list still opens in a shop with poor signal.
-  db = initializeFirestore(app, { localCache: persistentLocalCache() });
+  // Normally a copy of the list is kept on the phone, so it still opens in a shop with poor
+  // signal. If that copy ever gets stuck (it can on iPhones after an update), the app
+  // reloads without it, rather than showing "Loading…" forever.
+  const offlineCopy = store.get("offlineCopy") !== "off";
+  db = initializeFirestore(app, offlineCopy
+    ? { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) }
+    : {});
+  let loaded = false;
+  setTimeout(() => {
+    if (loaded) return;
+    if (offlineCopy) {
+      store.set("offlineCopy", "off");
+      location.reload();
+    } else {
+      showError(new Error("The list took too long to load."));
+    }
+  }, 10_000);
   items = collection(db, "lists", code, "items");
   history = collection(db, "lists", code, "history");
 
@@ -144,6 +143,7 @@ function startList(code) {
   setUpBulkAdd(app);
 
   onSnapshot(query(items, orderBy("createdAt")), (snap) => {
+    loaded = true;
     onList = snap.docs.map((d) => ({ id: d.id, data: d.data({ serverTimestamps: "estimate" }) }));
     renderList();
     renderBuyAgain();
@@ -359,7 +359,7 @@ function setUpBulkAdd(app) {
     if (!file) return;
     showPanel("photo-status");
     try {
-      const { readPhoto } = await import("./photo.js");
+      const { readPhoto } = await import("./photo.js?v=5");
       const found = await readPhoto(app, file, aiModel);
       if (found.length) showPreview(found);
       else {
@@ -447,4 +447,31 @@ function showError(err) {
   console.error(err);
   $("status").hidden = false;
   $("status").textContent = "Couldn't reach the list. Check your internet connection, then reload the page.";
+  // The technical reason, in small print, so a screenshot shows what went wrong.
+  const detail = document.createElement("small");
+  detail.className = "error-detail";
+  detail.textContent = String(err?.message || err).slice(0, 200);
+  $("status").append(detail);
+}
+
+// Any unexpected problem gets shown on screen too, instead of failing silently.
+window.addEventListener("error", (e) => showError(e.error || e.message));
+window.addEventListener("unhandledrejection", (e) => showError(e.reason));
+
+// ---- Start-up ----
+// This stays at the very end of the file, so everything above is ready before the list opens.
+
+if (firebaseConfig.projectId === "PASTE_HERE") {
+  show("setup-needed");
+} else {
+  const fromUrl = codeFromText(new URL(location.href).searchParams.get("list") || "");
+  const saved = store.get("listCode");
+  if (fromUrl) {
+    store.set("listCode", fromUrl);
+    askNameThen(() => startList(fromUrl));
+  } else if (saved && CODE_PATTERN.test(saved)) {
+    openList(saved);
+  } else {
+    show("start");
+  }
 }

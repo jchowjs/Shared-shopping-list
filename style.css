@@ -202,3 +202,4 @@ button.item-text {
 #recent-items { list-style: none; padding: 0; margin: 0; }
 #recent-items li { padding: 6px 0; border-bottom: 1px solid var(--line); }
 #recent-items .item-name { font-weight: 500; }
+.error-detail { display: block; margin-top: 6px; font-size: 0.75rem; opacity: 0.8; }

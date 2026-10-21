@@ -11,7 +11,7 @@
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-title" content="Shopping">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
   <header>
@@ -113,6 +113,7 @@
     <button id="toast-undo" class="link">Undo</button>
   </div>
 
-  <script type="module" src="app.js"></script>
+  <!-- "?v=" makes phones fetch the latest copy after an update; bump it (and in app.js) with each change. -->
+  <script type="module" src="app.js?v=5"></script>
 </body>
 </html>
