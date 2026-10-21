@@ -1,0 +1,25 @@
+rules_version = '2';
+
+// Copy everything in this file into Firebase (see README.md, step 3).
+//
+// What these rules say, in plain words:
+// - You can only see or change a list if you know its long secret code (from the family link).
+// - Nobody can browse or list all the lists that exist.
+// - Items must look like shopping items (a short name, optional details, a name of who added it).
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /lists/{listCode}/items/{itemId} {
+      allow read, delete: if listCode.size() >= 20;
+      allow create, update: if listCode.size() >= 20
+        && request.resource.data.keys().hasOnly(['name', 'details', 'addedBy', 'createdAt'])
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.details is string
+        && request.resource.data.details.size() <= 100
+        && request.resource.data.addedBy is string
+        && request.resource.data.addedBy.size() <= 30
+        && request.resource.data.createdAt is timestamp;
+    }
+  }
+}

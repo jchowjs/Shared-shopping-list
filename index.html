@@ -1,0 +1,80 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Shopping List</title>
+  <meta name="theme-color" content="#2f7d4f">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Shopping">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <h1>🛒 Shopping List</h1>
+    <button id="who" class="link" hidden></button>
+  </header>
+
+  <main>
+    <!-- Shown while Firebase details haven't been filled in yet -->
+    <section id="setup-needed" class="card" hidden>
+      <h2>Almost there</h2>
+      <p>This app isn't connected to its online storage yet. Open <code>config.js</code> and paste in your Firebase details. The README file explains how, step by step.</p>
+    </section>
+
+    <!-- Shown when this device hasn't joined a list yet -->
+    <section id="start" class="card" hidden>
+      <h2>Welcome</h2>
+      <p>If someone in your family already sent you a link, just open that link instead.</p>
+      <button id="new-list" class="primary">Start a new family list</button>
+      <p class="muted">Or paste the family link here:</p>
+      <form id="join-form" class="row">
+        <input id="join-input" placeholder="Paste link" autocomplete="off">
+        <button class="primary">Join</button>
+      </form>
+    </section>
+
+    <!-- Asked once per device -->
+    <section id="name-ask" class="card" hidden>
+      <h2>What's your name?</h2>
+      <p class="muted">So everyone can see who added what. You only need to do this once.</p>
+      <form id="name-form" class="row">
+        <input id="name-input" placeholder="e.g. Julian" maxlength="30" autocomplete="given-name" required>
+        <button class="primary">Save</button>
+      </form>
+    </section>
+
+    <!-- The list itself -->
+    <section id="list-view" hidden>
+      <form id="add-form" class="card add">
+        <input id="item-input" placeholder="What do we need?" maxlength="100" autocomplete="off" required>
+        <input id="details-input" placeholder="How many / notes (optional)" maxlength="100" autocomplete="off">
+        <button class="primary">Add to list</button>
+      </form>
+
+      <p id="status" class="muted center">Loading…</p>
+      <ul id="items"></ul>
+
+      <details class="share">
+        <summary>Share this list with family</summary>
+        <p class="muted">Send this link to anyone who should see the list. Keep it within the family, because anyone with the link can use the list.</p>
+        <div class="row">
+          <input id="share-link" readonly>
+          <button id="copy-link" type="button">Copy</button>
+        </div>
+      </details>
+    </section>
+  </main>
+
+  <div id="toast" hidden>
+    <span id="toast-text"></span>
+    <button id="toast-undo" class="link">Undo</button>
+  </div>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
