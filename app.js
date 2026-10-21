@@ -1,9 +1,10 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
 import {
   initializeFirestore, persistentLocalCache, collection, doc, addDoc, setDoc,
-  deleteDoc, onSnapshot, query, orderBy, serverTimestamp,
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig } from "./config.js";
+  deleteDoc, onSnapshot, query, orderBy, serverTimestamp, writeBatch, Timestamp,
+} from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
+import { firebaseConfig, aiModel } from "./config.js";
+import { splitIntoItems } from "./parse.js";
 
 const $ = (id) => document.getElementById(id);
 const show = (id) => {
@@ -136,6 +137,8 @@ function startList(code) {
     $("item-input").focus();
   };
 
+  setUpBulkAdd(app, db, items);
+
   onSnapshot(query(items, orderBy("createdAt")), (snap) => {
     const list = $("items");
     list.replaceChildren();
@@ -178,6 +181,98 @@ function renderItem(id, data, items) {
 
   li.append(tick, text);
   return li;
+}
+
+// ---- Adding several items at once: paste a block of text, or a photo of a list ----
+
+function setUpBulkAdd(app, db, items) {
+  const panels = ["paste-panel", "photo-status", "preview-panel"];
+  const showPanel = (id) => panels.forEach((p) => ($(p).hidden = p !== id));
+
+  $("open-paste").onclick = () => {
+    showPanel("paste-panel");
+    $("paste-input").focus();
+  };
+  $("paste-cancel").onclick = () => showPanel(null);
+  $("paste-next").onclick = () => {
+    const found = splitIntoItems($("paste-input").value);
+    if (!found.length) return alert("There's nothing to add yet. Type or paste your list first.");
+    showPreview(found);
+  };
+
+  $("photo-input").onchange = async () => {
+    const file = $("photo-input").files[0];
+    $("photo-input").value = ""; // so the same photo can be picked again
+    if (!file) return;
+    showPanel("photo-status");
+    try {
+      const { readPhoto } = await import("./photo.js");
+      const found = await readPhoto(app, file, aiModel);
+      if (found.length) showPreview(found);
+      else {
+        showPanel(null);
+        alert("Couldn't spot a shopping list in that photo. Try again with the list filling more of the picture.");
+      }
+    } catch (err) {
+      console.error(err);
+      showPanel(null);
+      alert("Sorry, the photo couldn't be read just now. Check your internet connection and try again.");
+    }
+  };
+
+  function showPreview(found) {
+    const list = $("preview-items");
+    list.replaceChildren(...found.slice(0, 50).map(previewRow));
+    showPanel("preview-panel");
+    updateAddButton();
+  }
+
+  function previewRow({ name, details }) {
+    const li = document.createElement("li");
+    const check = Object.assign(document.createElement("input"), { type: "checkbox", checked: true });
+    check.setAttribute("aria-label", "Include this item");
+    check.onchange = () => {
+      li.classList.toggle("off", !check.checked);
+      updateAddButton();
+    };
+    const nameInput = Object.assign(document.createElement("input"),
+      { type: "text", value: name, maxLength: 100, className: "preview-name", placeholder: "Item" });
+    const detailsInput = Object.assign(document.createElement("input"),
+      { type: "text", value: details, maxLength: 100, className: "preview-details", placeholder: "Amount" });
+    li.append(check, nameInput, detailsInput);
+    return li;
+  }
+
+  function chosenItems() {
+    return [...$("preview-items").children]
+      .filter((li) => li.querySelector("input[type=checkbox]").checked)
+      .map((li) => ({
+        name: li.querySelector(".preview-name").value.trim(),
+        details: li.querySelector(".preview-details").value.trim(),
+      }))
+      .filter((i) => i.name);
+  }
+
+  function updateAddButton() {
+    const n = [...$("preview-items").querySelectorAll("input[type=checkbox]")].filter((c) => c.checked).length;
+    $("preview-add").textContent = n === 1 ? "Add 1 item" : `Add ${n} items`;
+    $("preview-add").disabled = n === 0;
+  }
+
+  $("preview-cancel").onclick = () => showPanel(null);
+  $("preview-add").onclick = () => {
+    const batch = writeBatch(db);
+    const now = Date.now();
+    // Spaced a millisecond apart so they stay in the same order on the list.
+    chosenItems().forEach((i, n) => batch.set(doc(items), {
+      ...i,
+      addedBy: store.get("myName") || "",
+      createdAt: Timestamp.fromMillis(now + n),
+    }));
+    batch.commit().catch(showError);
+    $("paste-input").value = "";
+    showPanel(null);
+  };
 }
 
 // ---- Little pop-up at the bottom with an Undo button ----

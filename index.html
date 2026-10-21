@@ -56,6 +56,34 @@
         <button class="primary">Add to list</button>
       </form>
 
+      <div class="row bulk-buttons">
+        <button type="button" id="open-paste">📋 Paste a list</button>
+        <label class="button" for="photo-input">📷 Photo of a list</label>
+        <input type="file" id="photo-input" accept="image/*" hidden>
+      </div>
+
+      <section id="paste-panel" class="card" hidden>
+        <h2>Paste a list</h2>
+        <p class="muted">Put each item on its own line, or separate them with commas.</p>
+        <textarea id="paste-input" rows="6" placeholder="milk x2&#10;2 dozen eggs&#10;bread"></textarea>
+        <div class="row">
+          <button type="button" id="paste-cancel">Cancel</button>
+          <button type="button" id="paste-next" class="primary">Next</button>
+        </div>
+      </section>
+
+      <p id="photo-status" class="card center" hidden>Reading your photo… this takes a few seconds.</p>
+
+      <section id="preview-panel" class="card" hidden>
+        <h2>Check these items</h2>
+        <p class="muted">Fix anything that's not quite right, or untick it to leave it out.</p>
+        <ul id="preview-items"></ul>
+        <div class="row">
+          <button type="button" id="preview-cancel">Cancel</button>
+          <button type="button" id="preview-add" class="primary">Add items</button>
+        </div>
+      </section>
+
       <p id="status" class="muted center">Loading…</p>
       <ul id="items"></ul>
 

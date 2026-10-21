@@ -8,3 +8,6 @@ export const firebaseConfig = {
   messagingSenderId: "917101210590",
   appId: "1:917101210590:web:0bbbf8505e1e1d34910b4f",
 };
+
+// The Google AI model that reads photos of shopping lists (README.md, step 6).
+export const aiModel = "gemini-3.5-flash-lite";
