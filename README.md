@@ -5,6 +5,10 @@ A simple shared shopping list for the family.
 - Anyone can add an item, with an optional amount or note (e.g. "Eggs, 2 dozen").
 - Each item shows who added it.
 - Whoever buys an item taps the circle and it disappears from everyone's phone straight away. Tapped the wrong one? Press **Undo**.
+- Tap an item's name to change it (e.g. add "2 dozen" to eggs).
+- If something's already on the list, the app warns you before adding it twice.
+- **Buy again:** one-tap buttons for the things you buy most often.
+- **Recently bought:** what was bought in the last 2 days, and by whom.
 - **Paste a list:** paste or type several items at once (e.g. from WhatsApp). The app splits them up and lets you check them before adding.
 - **Photo of a list:** take a picture of a handwritten or printed list, and Google's AI reads the items out for you to check.
 - It can sit on your phone's home screen like an app.
