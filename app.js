@@ -1,11 +1,12 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js";
 import {
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager, collection, doc, updateDoc, onSnapshot,
+  deleteDoc, setDoc,
   query, orderBy, serverTimestamp, writeBatch, Timestamp, increment,
 } from "https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js";
 // "?v=" makes phones fetch the latest copy of each file after an update (bump it in index.html too).
-import { firebaseConfig, aiModel } from "./config.js?v=5";
-import { splitIntoItems } from "./parse.js?v=5";
+import { firebaseConfig, aiModel } from "./config.js?v=6";
+import { splitIntoItems } from "./parse.js?v=6";
 
 const $ = (id) => document.getElementById(id);
 const show = (id) => {
@@ -112,6 +113,7 @@ function startList(code) {
       store.set("offlineCopy", "off");
       location.reload();
     } else {
+      $("status").textContent = "The list is taking a long time to load.";
       showError(new Error("The list took too long to load."));
     }
   }, 10_000);
@@ -238,11 +240,13 @@ function renderEditor(id, data) {
     { value: data.name, maxLength: 100, required: true, placeholder: "Item" });
   const details = Object.assign(document.createElement("input"),
     { value: data.details || "", maxLength: 100, placeholder: "How many / notes (optional)" });
+  const remove = Object.assign(document.createElement("button"),
+    { type: "button", textContent: "Remove", className: "danger" });
   const cancel = Object.assign(document.createElement("button"), { type: "button", textContent: "Cancel" });
   const save = Object.assign(document.createElement("button"), { className: "primary", textContent: "Save" });
   const buttons = document.createElement("div");
   buttons.className = "row";
-  buttons.append(cancel, save);
+  buttons.append(remove, cancel, save);
   form.append(name, details, buttons);
 
   const close = () => {
@@ -250,6 +254,13 @@ function renderEditor(id, data) {
     renderList();
   };
   cancel.onclick = close;
+  // For mistakes and duplicates: takes it off the list without counting it as bought.
+  remove.onclick = () => {
+    const ref = doc(items, id);
+    deleteDoc(ref).catch(showError);
+    close();
+    showToast(`Removed: ${data.name}`, () => setDoc(ref, data).catch(showError));
+  };
   form.onsubmit = (e) => {
     e.preventDefault();
     updateDoc(doc(items, id), { name: name.value.trim(), details: details.value.trim() }).catch(showError);
@@ -359,7 +370,7 @@ function setUpBulkAdd(app) {
     if (!file) return;
     showPanel("photo-status");
     try {
-      const { readPhoto } = await import("./photo.js?v=5");
+      const { readPhoto } = await import("./photo.js?v=6");
       const found = await readPhoto(app, file, aiModel);
       if (found.length) showPreview(found);
       else {
@@ -445,14 +456,16 @@ function showToast(message, undo) {
 
 function showError(err) {
   console.error(err);
-  $("status").hidden = false;
-  $("status").textContent = "Couldn't reach the list. Check your internet connection, then reload the page.";
+  // Stays on screen until closed, so it isn't wiped when the list redraws.
+  $("error-text").textContent = "Something went wrong. Check your internet connection, then reload the page.";
   // The technical reason, in small print, so a screenshot shows what went wrong.
   const detail = document.createElement("small");
   detail.className = "error-detail";
   detail.textContent = String(err?.message || err).slice(0, 200);
-  $("status").append(detail);
+  $("error-text").append(detail);
+  $("error").hidden = false;
 }
+$("error-close").onclick = () => ($("error").hidden = true);
 
 // Any unexpected problem gets shown on screen too, instead of failing silently.
 window.addEventListener("error", (e) => showError(e.error || e.message));

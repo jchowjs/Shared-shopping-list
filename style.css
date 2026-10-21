@@ -203,3 +203,6 @@ button.item-text {
 #recent-items li { padding: 6px 0; border-bottom: 1px solid var(--line); }
 #recent-items .item-name { font-weight: 500; }
 .error-detail { display: block; margin-top: 6px; font-size: 0.75rem; opacity: 0.8; }
+.editor .row button.danger { color: #c0392b; border-color: currentColor; }
+.error { display: flex; gap: 12px; align-items: flex-start; border-color: #c0392b; }
+.error #error-text { flex: 1; }

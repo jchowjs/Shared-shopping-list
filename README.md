@@ -5,7 +5,7 @@ A simple shared shopping list for the family.
 - Anyone can add an item, with an optional amount or note (e.g. "Eggs, 2 dozen").
 - Each item shows who added it.
 - Whoever buys an item taps the circle and it disappears from everyone's phone straight away. Tapped the wrong one? Press **Undo**.
-- Tap an item's name to change it (e.g. add "2 dozen" to eggs).
+- Tap an item's name to change it (e.g. add "2 dozen" to eggs), or **Remove** it if it was added by mistake.
 - If something's already on the list, the app warns you before adding it twice.
 - **Buy again:** one-tap buttons for the things you buy most often.
 - **Recently bought:** what was bought in the last 2 days, and by whom.
